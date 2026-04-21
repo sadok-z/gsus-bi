@@ -1138,9 +1138,10 @@ const App = (function () {
 
     function handleSelection(e, value, activeSet, container, forceMulti = false) {
         const isMulti = forceMulti || e.metaKey || e.ctrlKey;
-        if (isMulti) {
-            if (activeSet.has(value)) activeSet.delete(value);
-            else activeSet.add(value);
+        if (activeSet.has(value)) {
+            activeSet.delete(value);
+        } else if (isMulti) {
+            activeSet.add(value);
         } else {
             activeSet.clear();
             activeSet.add(value);
