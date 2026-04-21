@@ -192,6 +192,65 @@ header h1 {
     margin-bottom: 0.5rem;
 }
 
+.filter-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.filter-header-row label {
+    flex: 1;
+}
+
+.filter-action-btn {
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--text-secondary);
+    border-radius: 999px;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.filter-action-btn:hover:not(:disabled) {
+    border-color: rgba(37, 99, 235, 0.4);
+    color: var(--primary-color);
+    background: rgba(219, 234, 254, 0.65);
+}
+
+.filter-action-btn.has-selection,
+.filter-action-btn.is-open {
+    border-color: rgba(37, 99, 235, 0.35);
+    color: var(--primary-color);
+    background: rgba(219, 234, 254, 0.85);
+}
+
+.filter-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.filter-subpanel {
+    margin-bottom: 0.5rem;
+}
+
+.filter-subpanel-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 0.35rem;
+}
+
+.regional-filter-list {
+    max-height: 140px;
+}
+
 .filter-search {
     width: 100%;
     padding: 0.5rem 0.75rem;

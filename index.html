@@ -110,12 +110,28 @@
                         <div class="filter-list" id="filterType"></div>
                     </div>
                     <div class="filter-group">
-                        <label>EAS Executante</label>
+                        <div class="filter-header-row">
+                            <label style="margin-bottom: 0;">EAS Executante</label>
+                            <button type="button" class="filter-action-btn" id="btnExecutanteRegional"
+                                aria-expanded="false">Regional</button>
+                        </div>
+                        <div class="filter-subpanel" id="panelExecutanteRegional" hidden>
+                            <div class="filter-subpanel-label">Filtrar executantes por regional</div>
+                            <div class="filter-list small-text regional-filter-list" id="filterExecutanteRegional"></div>
+                        </div>
                         <input type="text" class="filter-search" placeholder="Buscar..." id="searchExecutante">
                         <div class="filter-list small-text" id="filterExecutante"></div>
                     </div>
                     <div class="filter-group">
-                        <label>EAS Solicitante</label>
+                        <div class="filter-header-row">
+                            <label style="margin-bottom: 0;">EAS Solicitante</label>
+                            <button type="button" class="filter-action-btn" id="btnSolicitanteRegional"
+                                aria-expanded="false">Regional</button>
+                        </div>
+                        <div class="filter-subpanel" id="panelSolicitanteRegional" hidden>
+                            <div class="filter-subpanel-label">Filtrar solicitantes por regional</div>
+                            <div class="filter-list small-text regional-filter-list" id="filterSolicitanteRegional"></div>
+                        </div>
                         <input type="text" class="filter-search" placeholder="Buscar..." id="searchSolicitante">
                         <div class="filter-list small-text" id="filterSolicitante"></div>
                     </div>

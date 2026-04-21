@@ -31,8 +31,15 @@ const App = (function () {
         months: new Set(),
         situations: new Set(),
         types: new Set(['EXTERNA']), // Default to Externa
+        executanteRegionais: new Set(),
+        solicitanteRegionais: new Set(),
         executantes: new Set(),
         solicitantes: new Set()
+    };
+
+    const derivedData = {
+        executanteRegionalMap: new Map(),
+        solicitanteRegionalMap: new Map()
     };
 
     // DOM Elements
@@ -56,8 +63,14 @@ const App = (function () {
             month: null,
             situation: null,
             type: null,
+            executanteRegional: null,
+            solicitanteRegional: null,
             executante: null,
             solicitante: null,
+            btnExecutanteRegional: null,
+            btnSolicitanteRegional: null,
+            panelExecutanteRegional: null,
+            panelSolicitanteRegional: null,
             searchExec: null,
             searchSolic: null,
             switchAceite: null,
@@ -180,8 +193,14 @@ const App = (function () {
         elements.filters.month = document.getElementById('filterMonth');
         elements.filters.situation = document.getElementById('filterSituation');
         elements.filters.type = document.getElementById('filterType');
+        elements.filters.executanteRegional = document.getElementById('filterExecutanteRegional');
+        elements.filters.solicitanteRegional = document.getElementById('filterSolicitanteRegional');
         elements.filters.executante = document.getElementById('filterExecutante');
         elements.filters.solicitante = document.getElementById('filterSolicitante');
+        elements.filters.btnExecutanteRegional = document.getElementById('btnExecutanteRegional');
+        elements.filters.btnSolicitanteRegional = document.getElementById('btnSolicitanteRegional');
+        elements.filters.panelExecutanteRegional = document.getElementById('panelExecutanteRegional');
+        elements.filters.panelSolicitanteRegional = document.getElementById('panelSolicitanteRegional');
         elements.filters.searchExec = document.getElementById('searchExecutante');
         elements.filters.searchSolic = document.getElementById('searchSolicitante');
         elements.filters.switchAceite = document.getElementById('checkAceite');
@@ -305,6 +324,22 @@ const App = (function () {
 
         if (elements.filters.searchExec) setupSearch(elements.filters.searchExec, elements.filters.executante);
         if (elements.filters.searchSolic) setupSearch(elements.filters.searchSolic, elements.filters.solicitante);
+        if (elements.filters.btnExecutanteRegional && elements.filters.panelExecutanteRegional) {
+            setupRegionalPanelToggle(
+                elements.filters.btnExecutanteRegional,
+                elements.filters.panelExecutanteRegional,
+                activeFilters.executanteRegionais
+            );
+        }
+        if (elements.filters.btnSolicitanteRegional && elements.filters.panelSolicitanteRegional) {
+            setupRegionalPanelToggle(
+                elements.filters.btnSolicitanteRegional,
+                elements.filters.panelSolicitanteRegional,
+                activeFilters.solicitanteRegionais
+            );
+        }
+
+        document.addEventListener('click', handleOutsideRegionalPanels);
 
         // Aceite Switch Logic
         if (elements.filters.switchAceite) {
@@ -348,13 +383,73 @@ const App = (function () {
 
     function setupSearch(input, listContainer) {
         input.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const items = listContainer.querySelectorAll('.filter-item');
-            items.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                item.style.display = text.includes(term) ? 'block' : 'none';
-            });
+            applySearchTerm(e.target.value, listContainer);
         });
+    }
+
+    function applySearchTerm(term, listContainer) {
+        const normalizedTerm = String(term || "").toLowerCase();
+        const items = listContainer.querySelectorAll('.filter-item');
+        items.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = text.includes(normalizedTerm) ? 'block' : 'none';
+        });
+    }
+
+    function refreshSearchFilters() {
+        if (elements.filters.searchExec && elements.filters.executante) {
+            applySearchTerm(elements.filters.searchExec.value, elements.filters.executante);
+        }
+        if (elements.filters.searchSolic && elements.filters.solicitante) {
+            applySearchTerm(elements.filters.searchSolic.value, elements.filters.solicitante);
+        }
+    }
+
+    function setupRegionalPanelToggle(button, panel, activeSet) {
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const shouldOpen = panel.hidden;
+            closeRegionalPanels();
+            setRegionalPanelState(button, panel, shouldOpen);
+            updateRegionalButton(button, activeSet);
+        });
+        updateRegionalButton(button, activeSet);
+    }
+
+    function handleOutsideRegionalPanels(event) {
+        closePanelIfOutside(event, elements.filters.btnExecutanteRegional, elements.filters.panelExecutanteRegional, activeFilters.executanteRegionais);
+        closePanelIfOutside(event, elements.filters.btnSolicitanteRegional, elements.filters.panelSolicitanteRegional, activeFilters.solicitanteRegionais);
+    }
+
+    function closePanelIfOutside(event, button, panel, activeSet) {
+        if (!button || !panel || panel.hidden) return;
+        if (button.contains(event.target) || panel.contains(event.target)) return;
+        setRegionalPanelState(button, panel, false);
+        updateRegionalButton(button, activeSet);
+    }
+
+    function closeRegionalPanels() {
+        setRegionalPanelState(elements.filters.btnExecutanteRegional, elements.filters.panelExecutanteRegional, false);
+        setRegionalPanelState(elements.filters.btnSolicitanteRegional, elements.filters.panelSolicitanteRegional, false);
+    }
+
+    function setRegionalPanelState(button, panel, isOpen) {
+        if (!button || !panel) return;
+        panel.hidden = !isOpen;
+        button.classList.toggle('is-open', isOpen);
+        button.setAttribute('aria-expanded', String(isOpen));
+    }
+
+    function updateRegionalButtons() {
+        updateRegionalButton(elements.filters.btnExecutanteRegional, activeFilters.executanteRegionais);
+        updateRegionalButton(elements.filters.btnSolicitanteRegional, activeFilters.solicitanteRegionais);
+    }
+
+    function updateRegionalButton(button, activeSet) {
+        if (!button) return;
+        const count = activeSet.size;
+        button.textContent = count > 0 ? `Regional (${count})` : 'Regional';
+        button.classList.toggle('has-selection', count > 0);
     }
 
     function preventDefaults(e) {
@@ -927,14 +1022,17 @@ const App = (function () {
     }
 
     function populateFilters() {
-        // Use EFFECTIVE data (respecting psychiatric setting)
         const data = getEffectiveData();
+        rebuildRegionalMaps(data);
+
         if (data.length === 0) {
             activeFilters.years.clear();
             activeFilters.months.clear();
             activeFilters.situations.clear();
             activeFilters.types.clear();
             activeFilters.types.add('EXTERNA');
+            activeFilters.executanteRegionais.clear();
+            activeFilters.solicitanteRegionais.clear();
             activeFilters.executantes.clear();
             activeFilters.solicitantes.clear();
 
@@ -942,8 +1040,14 @@ const App = (function () {
             if (elements.filters.month) elements.filters.month.innerHTML = '';
             if (elements.filters.situation) elements.filters.situation.innerHTML = '';
             if (elements.filters.type) elements.filters.type.innerHTML = '';
+            if (elements.filters.executanteRegional) elements.filters.executanteRegional.innerHTML = '';
+            if (elements.filters.solicitanteRegional) elements.filters.solicitanteRegional.innerHTML = '';
             if (elements.filters.executante) elements.filters.executante.innerHTML = '';
             if (elements.filters.solicitante) elements.filters.solicitante.innerHTML = '';
+            if (elements.filters.btnExecutanteRegional) elements.filters.btnExecutanteRegional.disabled = true;
+            if (elements.filters.btnSolicitanteRegional) elements.filters.btnSolicitanteRegional.disabled = true;
+            closeRegionalPanels();
+            updateRegionalButtons();
             return;
         }
 
@@ -951,20 +1055,19 @@ const App = (function () {
         const months = [...new Set(data.map(d => String(d["_month"] || "")).filter(Boolean))].sort();
         const situations = [...new Set(data.map(d => String(d["_situation"] || "")).filter(Boolean))].sort();
         const types = [...new Set(data.map(d => String(d["_type"] || "")).filter(Boolean))].sort();
-        const execs = [...new Set(data.map(d => String(d["EAS Executante"] || "")).filter(Boolean))].sort();
-        const solics = [...new Set(data.map(d => String(d["EAS Solicitante"] || "")).filter(Boolean))].sort();
+        const execRegions = getRegionalValuesFromMap(derivedData.executanteRegionalMap);
+        const solicRegions = getRegionalValuesFromMap(derivedData.solicitanteRegionalMap);
 
-        // Cleanup active filters if they no longer exist in data
-        const cleanActiveFilters = (activeSet, availableItems) => {
-            const availableSet = new Set(availableItems);
-            for (let item of activeSet) {
-                if (!availableSet.has(item)) activeSet.delete(item);
-            }
-        };
         cleanActiveFilters(activeFilters.years, years);
         cleanActiveFilters(activeFilters.months, months);
         cleanActiveFilters(activeFilters.situations, situations);
         cleanActiveFilters(activeFilters.types, types);
+        cleanActiveFilters(activeFilters.executanteRegionais, execRegions);
+        cleanActiveFilters(activeFilters.solicitanteRegionais, solicRegions);
+
+        const execs = getExecutanteOptions(data);
+        const solics = getSolicitanteOptions(data);
+
         cleanActiveFilters(activeFilters.executantes, execs);
         cleanActiveFilters(activeFilters.solicitantes, solics);
 
@@ -972,24 +1075,59 @@ const App = (function () {
         if (elements.filters.month) createFilterList(elements.filters.month, months, activeFilters.months);
         if (elements.filters.situation) createFilterList(elements.filters.situation, situations, activeFilters.situations);
         if (elements.filters.type) createFilterList(elements.filters.type, types, activeFilters.types);
+        if (elements.filters.executanteRegional) {
+            createFilterList(
+                elements.filters.executanteRegional,
+                execRegions.map(region => ({ value: region, label: formatRegionalLabel(region), title: region })),
+                activeFilters.executanteRegionais,
+                { forceMulti: true }
+            );
+        }
+        if (elements.filters.solicitanteRegional) {
+            createFilterList(
+                elements.filters.solicitanteRegional,
+                solicRegions.map(region => ({ value: region, label: formatRegionalLabel(region), title: region })),
+                activeFilters.solicitanteRegionais,
+                { forceMulti: true }
+            );
+        }
         if (elements.filters.executante) createFilterList(elements.filters.executante, execs, activeFilters.executantes);
         if (elements.filters.solicitante) createFilterList(elements.filters.solicitante, solics, activeFilters.solicitantes);
+
+        if (elements.filters.btnExecutanteRegional) elements.filters.btnExecutanteRegional.disabled = execRegions.length === 0;
+        if (elements.filters.btnSolicitanteRegional) elements.filters.btnSolicitanteRegional.disabled = solicRegions.length === 0;
+        updateRegionalButtons();
+        refreshSearchFilters();
     }
 
-    function createFilterList(container, items, activeSet) {
+    function cleanActiveFilters(activeSet, availableItems) {
+        const availableSet = new Set(availableItems);
+        for (let item of activeSet) {
+            if (!availableSet.has(item)) activeSet.delete(item);
+        }
+    }
+
+    function createFilterList(container, items, activeSet, options = {}) {
         container.innerHTML = '';
         items.forEach(item => {
+            const option = typeof item === 'object'
+                ? item
+                : { value: item, label: item, title: item };
+
             const div = document.createElement('div');
             div.className = 'filter-item';
-            div.textContent = item;
-            div.title = item;
+            div.textContent = option.label;
+            div.title = option.title || option.label;
+            div.dataset.value = option.value;
 
-            if (activeSet.has(item)) {
+            if (activeSet.has(option.value)) {
                 div.classList.add('selected');
             }
 
             div.addEventListener('click', (e) => {
-                handleSelection(e, item, activeSet, container);
+                handleSelection(e, option.value, activeSet, container, options.forceMulti);
+                updateRegionalButtons();
+                populateFilters();
                 applyFilters();
                 updateUI();
             });
@@ -998,8 +1136,8 @@ const App = (function () {
         });
     }
 
-    function handleSelection(e, value, activeSet, container) {
-        const isMulti = e.metaKey || e.ctrlKey;
+    function handleSelection(e, value, activeSet, container, forceMulti = false) {
+        const isMulti = forceMulti || e.metaKey || e.ctrlKey;
         if (isMulti) {
             if (activeSet.has(value)) activeSet.delete(value);
             else activeSet.add(value);
@@ -1009,13 +1147,106 @@ const App = (function () {
         }
         const allItems = container.querySelectorAll('.filter-item');
         allItems.forEach(item => {
-            if (activeSet.has(item.textContent)) item.classList.add('selected');
+            const itemValue = item.dataset.value || item.textContent;
+            if (activeSet.has(itemValue)) item.classList.add('selected');
             else item.classList.remove('selected');
         });
     }
 
+    function rebuildRegionalMaps(data) {
+        derivedData.executanteRegionalMap = new Map();
+        derivedData.solicitanteRegionalMap = new Map();
+
+        data.forEach(row => {
+            const solicitante = normalizeEntityName(row["EAS Solicitante"]);
+            const regional = normalizeRegionalValue(row["Regional EAS Solicitante"]);
+            if (!solicitante || !regional) return;
+            addRegionToMap(derivedData.solicitanteRegionalMap, solicitante, regional);
+        });
+
+        const executantes = [...new Set(data.map(row => normalizeEntityName(row["EAS Executante"])).filter(Boolean))];
+        executantes.forEach(executante => {
+            const mappedRegions = derivedData.solicitanteRegionalMap.get(executante);
+            if (!mappedRegions || mappedRegions.size === 0) return;
+            derivedData.executanteRegionalMap.set(executante, new Set(mappedRegions));
+        });
+    }
+
+    function addRegionToMap(map, key, value) {
+        if (!map.has(key)) {
+            map.set(key, new Set());
+        }
+        map.get(key).add(value);
+    }
+
+    function normalizeEntityName(value) {
+        return String(value || "").trim().toUpperCase();
+    }
+
+    function normalizeRegionalValue(value) {
+        return String(value || "").trim().toUpperCase();
+    }
+
+    function getRegionalValuesFromMap(map) {
+        const values = new Set();
+        map.forEach(regionSet => {
+            regionSet.forEach(region => values.add(region));
+        });
+        return [...values].sort(compareRegionalValues);
+    }
+
+    function getExecutanteOptions(data) {
+        const execs = [...new Set(data.map(d => String(d["EAS Executante"] || "").trim()).filter(Boolean))].sort();
+        if (activeFilters.executanteRegionais.size === 0) return execs;
+
+        return execs.filter(exec => matchSelectedRegions(
+            derivedData.executanteRegionalMap.get(normalizeEntityName(exec)),
+            activeFilters.executanteRegionais
+        ));
+    }
+
+    function getSolicitanteOptions(data) {
+        const solics = [...new Set(data.map(d => String(d["EAS Solicitante"] || "").trim()).filter(Boolean))].sort();
+        if (activeFilters.solicitanteRegionais.size === 0) return solics;
+
+        return solics.filter(solic => matchSelectedRegions(
+            derivedData.solicitanteRegionalMap.get(normalizeEntityName(solic)),
+            activeFilters.solicitanteRegionais
+        ));
+    }
+
+    function matchSelectedRegions(regionSet, selectedSet) {
+        if (selectedSet.size === 0) return true;
+        if (!regionSet || regionSet.size === 0) return false;
+
+        for (const region of regionSet) {
+            if (selectedSet.has(region)) return true;
+        }
+        return false;
+    }
+
+    function compareRegionalValues(a, b) {
+        const aNumber = extractRegionalNumber(a);
+        const bNumber = extractRegionalNumber(b);
+        if (aNumber !== bNumber) return aNumber - bNumber;
+        return a.localeCompare(b, 'pt-BR');
+    }
+
+    function extractRegionalNumber(value) {
+        const match = normalizeRegionalValue(value).match(/^RS\s*0?(\d+)/);
+        return match ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
+    }
+
+    function formatRegionalLabel(value) {
+        const normalized = normalizeRegionalValue(value);
+        const match = normalized.match(/^RS\s*0?(\d+)\s*-\s*(.+)$/);
+        if (!match) return normalized;
+        return `${parseInt(match[1], 10)}ª Regional - ${match[2]}`;
+    }
+
     function applyFilters() {
         const data = getEffectiveData();
+        rebuildRegionalMaps(data);
 
         const aceiteSituations = new Set([
             "AGUARDANDO REMOÇÃO",
@@ -1040,11 +1271,25 @@ const App = (function () {
             }
 
             const typeMatch = activeFilters.types.size === 0 || activeFilters.types.has(String(row["_type"] || ""));
+            const execRegionalMatch = matchSelectedRegions(
+                derivedData.executanteRegionalMap.get(normalizeEntityName(row["EAS Executante"])),
+                activeFilters.executanteRegionais
+            );
+            const solicRegionalMatch = activeFilters.solicitanteRegionais.size === 0 ||
+                activeFilters.solicitanteRegionais.has(normalizeRegionalValue(row["Regional EAS Solicitante"]));
             const execMatch = activeFilters.executantes.size === 0 || activeFilters.executantes.has(String(row["EAS Executante"] || ""));
             const solicMatch = activeFilters.solicitantes.size === 0 || activeFilters.solicitantes.has(String(row["EAS Solicitante"] || ""));
             const internamentoMatch = !settings.filterInternamento || hasInternationData(row["_rawDateInternacao"]);
 
-            return yearMatch && monthMatch && situationMatch && typeMatch && execMatch && solicMatch && internamentoMatch;
+            return yearMatch &&
+                monthMatch &&
+                situationMatch &&
+                typeMatch &&
+                execRegionalMatch &&
+                solicRegionalMatch &&
+                execMatch &&
+                solicMatch &&
+                internamentoMatch;
         });
     }
 
@@ -1195,8 +1440,12 @@ const App = (function () {
         activeFilters.situations.clear();
         activeFilters.types.clear();
         activeFilters.types.add('EXTERNA');
+        activeFilters.executanteRegionais.clear();
+        activeFilters.solicitanteRegionais.clear();
         activeFilters.executantes.clear();
         activeFilters.solicitantes.clear();
+        derivedData.executanteRegionalMap = new Map();
+        derivedData.solicitanteRegionalMap = new Map();
 
         clearDB(); // Clear persistence
 
@@ -1205,8 +1454,14 @@ const App = (function () {
         if (elements.filters.month) elements.filters.month.innerHTML = '';
         if (elements.filters.situation) elements.filters.situation.innerHTML = '';
         if (elements.filters.type) elements.filters.type.innerHTML = '';
+        if (elements.filters.executanteRegional) elements.filters.executanteRegional.innerHTML = '';
+        if (elements.filters.solicitanteRegional) elements.filters.solicitanteRegional.innerHTML = '';
         if (elements.filters.executante) elements.filters.executante.innerHTML = '';
         if (elements.filters.solicitante) elements.filters.solicitante.innerHTML = '';
+        if (elements.filters.btnExecutanteRegional) elements.filters.btnExecutanteRegional.disabled = true;
+        if (elements.filters.btnSolicitanteRegional) elements.filters.btnSolicitanteRegional.disabled = true;
+        closeRegionalPanels();
+        updateRegionalButtons();
 
         if (elements.stats.totalFiles) elements.stats.totalFiles.textContent = '0';
         if (elements.stats.totalRecords) elements.stats.totalRecords.textContent = '0';
