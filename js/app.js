@@ -21,7 +21,8 @@ const App = (function () {
     const settings = {
         useInternationDate: false,
         includePsychiatric: false, // Default: Do not count psychiatric
-        filterAceite: false // Default: Do not filter by aceite
+        filterAceite: false, // Default: Do not filter by aceite
+        filterInternamento: false // Default: Do not filter by internamento
     };
 
     // Filter State
@@ -59,7 +60,8 @@ const App = (function () {
             solicitante: null,
             searchExec: null,
             searchSolic: null,
-            switchAceite: null
+            switchAceite: null,
+            switchInternamento: null
         },
         tableHead: null,
         tableBody: null,
@@ -183,6 +185,7 @@ const App = (function () {
         elements.filters.searchExec = document.getElementById('searchExecutante');
         elements.filters.searchSolic = document.getElementById('searchSolicitante');
         elements.filters.switchAceite = document.getElementById('checkAceite');
+        elements.filters.switchInternamento = document.getElementById('checkInternamento');
 
         // Settings Elements
         elements.settings.modal = document.getElementById('settingsModal');
@@ -310,6 +313,17 @@ const App = (function () {
 
             elements.filters.switchAceite.addEventListener('change', (e) => {
                 settings.filterAceite = e.target.checked;
+                saveStateToDB();
+                applyFilters();
+                updateUI();
+            });
+        }
+
+        if (elements.filters.switchInternamento) {
+            elements.filters.switchInternamento.checked = settings.filterInternamento;
+
+            elements.filters.switchInternamento.addEventListener('change', (e) => {
+                settings.filterInternamento = e.target.checked;
                 saveStateToDB();
                 applyFilters();
                 updateUI();
@@ -1009,7 +1023,8 @@ const App = (function () {
             "EM TRÂNSITO",
             "INTERNADO",
             "PACIENTE AVALIADO E LIBERADO",
-            "RESERVA CONFIRMADA"
+            "RESERVA CONFIRMADA",
+            "TRANSFERÊNCIA PARA EAS NÃO REGULADO"
         ]);
 
         filteredData = data.filter(row => {
@@ -1027,9 +1042,22 @@ const App = (function () {
             const typeMatch = activeFilters.types.size === 0 || activeFilters.types.has(String(row["_type"] || ""));
             const execMatch = activeFilters.executantes.size === 0 || activeFilters.executantes.has(String(row["EAS Executante"] || ""));
             const solicMatch = activeFilters.solicitantes.size === 0 || activeFilters.solicitantes.has(String(row["EAS Solicitante"] || ""));
+            const internamentoMatch = !settings.filterInternamento || hasInternationData(row["_rawDateInternacao"]);
 
-            return yearMatch && monthMatch && situationMatch && typeMatch && execMatch && solicMatch;
+            return yearMatch && monthMatch && situationMatch && typeMatch && execMatch && solicMatch && internamentoMatch;
         });
+    }
+
+    function hasInternationData(value) {
+        if (value instanceof Date) {
+            return !isNaN(value.getTime());
+        }
+
+        if (typeof value === 'number') {
+            return !Number.isNaN(value);
+        }
+
+        return String(value || "").trim() !== "";
     }
 
     function removeFile(fileName) {

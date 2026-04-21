@@ -83,12 +83,22 @@
                             style="display: flex; justify-content: flex-start; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                             <label style="margin-bottom: 0;">Situação Atual</label>
                             <div style="display: flex; align-items: center; gap: 0.4rem;"
-                                title="Filtrar apenas: AGUARDANDO REMOÇÃO, ALTA, EM TRÂNSITO, INTERNADO, PACIENTE AVALIADO E LIBERADO, RESERVA CONFIRMADA">
+                                title="Filtrar apenas: AGUARDANDO REMOÇÃO, ALTA, EM TRÂNSITO, INTERNADO, PACIENTE AVALIADO E LIBERADO, RESERVA CONFIRMADA, TRANSFERÊNCIA PARA EAS NÃO REGULADO">
                                 <span
                                     style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;">Aceite</span>
                                 <label class="switch switch-small switch-blue"
                                     style="margin-bottom: 0; display: inline-block;">
                                     <input type="checkbox" id="checkAceite" style="opacity: 0; width: 0; height: 0;">
+                                    <span class="slider round slider-small"></span>
+                                </label>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.4rem;"
+                                title="Filtrar apenas pacientes que possuem algum valor em Data de Internação">
+                                <span
+                                    style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;">Internamento</span>
+                                <label class="switch switch-small switch-blue"
+                                    style="margin-bottom: 0; display: inline-block;">
+                                    <input type="checkbox" id="checkInternamento" style="opacity: 0; width: 0; height: 0;">
                                     <span class="slider round slider-small"></span>
                                 </label>
                             </div>
