@@ -709,18 +709,11 @@ const App = (function () {
         // Generate XLSX instead of CSV for better Excel compatibility
         const exportDataList = [];
         targetEAS.forEach(eas => {
-            if (counts[eas] > 0) { // Only export EAS with actual data
-                exportDataList.push({
-                    "EAS EXECUTANTE": eas,
-                    "QUANTIDADE": counts[eas]
-                });
-            }
+            exportDataList.push({
+                "EAS EXECUTANTE": eas,
+                "QUANTIDADE": counts[eas]
+            });
         });
-
-        if (exportDataList.length === 0) {
-            alert("Nenhum aceite mensal encontrado para os EAS monitorados no período.");
-            return;
-        }
 
         const ws = XLSX.utils.json_to_sheet(exportDataList);
         const wb = XLSX.utils.book_new();
@@ -732,7 +725,7 @@ const App = (function () {
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = `Aceites_Mensal_${new Date().toISOString().split('T')[0]}.xlsx`;
+            link.download = `aceites_mensal_${getExportPeriodSlug()}.xlsx`;
             document.body.appendChild(link);
             link.click();
             setTimeout(() => {
@@ -783,18 +776,11 @@ const App = (function () {
         // Generate XLSX
         const exportDataList = [];
         targetEAS.forEach(eas => {
-            if (counts[eas] > 0) { // Only export EAS with actual data
-                exportDataList.push({
-                    "EAS EXECUTANTE": eas,
-                    "QUANTIDADE": counts[eas]
-                });
-            }
+            exportDataList.push({
+                "EAS EXECUTANTE": eas,
+                "QUANTIDADE": counts[eas]
+            });
         });
-
-        if (exportDataList.length === 0) {
-            alert("Nenhum aceite de ortopedia encontrado para os EAS monitorados no período.");
-            return;
-        }
 
         const ws = XLSX.utils.json_to_sheet(exportDataList);
         const wb = XLSX.utils.book_new();
@@ -805,7 +791,7 @@ const App = (function () {
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = `Aceites_Ortopedia_${new Date().toISOString().split('T')[0]}.xlsx`;
+            link.download = `aceites_ortopedia_${getExportPeriodSlug()}.xlsx`;
             document.body.appendChild(link);
             link.click();
             setTimeout(() => {
@@ -822,6 +808,33 @@ const App = (function () {
         if (elements.loading) {
             elements.loading.style.display = show ? 'flex' : 'none';
         }
+    }
+
+    function getExportPeriodSlug() {
+        const years = getSelectedOrFilteredValues(activeFilters.years, "_year");
+        const months = getSelectedOrFilteredValues(activeFilters.months, "_month");
+
+        if (years.length === 1 && months.length === 1) {
+            return `${years[0]}-${getMonthSlug(months[0])}`;
+        }
+
+        return "periodo_filtrado";
+    }
+
+    function getSelectedOrFilteredValues(activeSet, fieldName) {
+        const selectedValues = [...activeSet].filter(value => value && value !== "N/A").sort();
+        if (selectedValues.length > 0) return selectedValues;
+
+        return [...new Set(filteredData.map(row => String(row[fieldName] || "")).filter(value => value && value !== "N/A"))].sort();
+    }
+
+    function getMonthSlug(monthValue) {
+        const monthSlugs = [
+            "janeiro", "fevereiro", "marco", "abril", "maio", "junho",
+            "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
+        ];
+        const monthIndex = parseInt(monthValue, 10) - 1;
+        return monthSlugs[monthIndex] || String(monthValue).toLowerCase();
     }
 
     async function handleFiles(fileList) {
@@ -1188,6 +1201,14 @@ const App = (function () {
         return String(value || "").trim().toUpperCase();
     }
 
+    function normalizeSituationValue(value) {
+        return String(value || "")
+            .trim()
+            .toUpperCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+    }
+
     function getRegionalValuesFromMap(map) {
         const values = new Set();
         map.forEach(regionSet => {
@@ -1257,7 +1278,7 @@ const App = (function () {
             "PACIENTE AVALIADO E LIBERADO",
             "RESERVA CONFIRMADA",
             "TRANSFERÊNCIA PARA EAS NÃO REGULADO"
-        ]);
+        ].map(normalizeSituationValue));
 
         filteredData = data.filter(row => {
             const yearMatch = activeFilters.years.size === 0 || activeFilters.years.has(String(row["_year"] || ""));
@@ -1266,7 +1287,7 @@ const App = (function () {
             // Situation matching modified by Aceite Switch
             let situationMatch = true;
             if (settings.filterAceite) {
-                situationMatch = aceiteSituations.has(String(row["_situation"] || ""));
+                situationMatch = aceiteSituations.has(normalizeSituationValue(row["_situation"]));
             } else {
                 situationMatch = activeFilters.situations.size === 0 || activeFilters.situations.has(String(row["_situation"] || ""));
             }
